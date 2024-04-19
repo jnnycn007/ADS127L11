@@ -6,7 +6,7 @@
 	"repository":
 	{
 		"type": "git",
-		"url": "https://github.com/wrgallo/ads127l11.git"
+		"url": "https://github.com/wrgallo/ADS127L11.git"
 	},
 	"authors":
 	[
@@ -16,7 +16,7 @@
 		  "maintainer": true
 		}
 	],
-	"homepage": "https://github.com/wrgallo/ads127l11",
+	"homepage": "https://github.com/wrgallo/ADS127L11",
 	"license": "MIT",
 	"frameworks": "*",
 	"platforms": "*"
