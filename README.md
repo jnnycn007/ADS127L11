@@ -41,7 +41,7 @@ typedef struct _ads127l11_t
 {
     ads_hal_t            hal;                             //!< HAL Callback Functions
     uint8_t              reg[ ADS127L11_NUM_REGISTERS ];  //!< ADS127L11 Register Map
-	ads127l11_mode_cfg_t cfg;                             //!< Constant configs
+    ads127l11_mode_cfg_t cfg;                             //!< Constant configs
 } ads127l11_t;
 ```
 
