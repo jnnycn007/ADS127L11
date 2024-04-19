@@ -2,6 +2,7 @@
 <br>
 <p align="center">
 <a href="https://www.ti.com/product/ADS127L11" title="Product Details">Product Details</a> |
+<a href="https://www.ti.com/lit/ds/symlink/ads127l11.pdf" title="Datasheet">Datasheet</a> |
 <a href="https://www.ti.com/tool/download/SBAC296" title="C Example Code">SBAC296 Example Code</a>
 </p>
 <br>
