@@ -1,0 +1,23 @@
+{
+	"name": "ads127l11",
+	"version": "0.0.1",
+	"keywords": "adc, sigma-delta",
+	"description": "ADS127L11 analog to digital converter library",
+	"repository":
+	{
+		"type": "git",
+		"url": "https://github.com/wrgallo/ads127l11.git"
+	},
+	"authors":
+	[
+		{
+		  "name": "Wellington R Gallo",
+		  "email": "wrgallo@hotmail.com",
+		  "maintainer": true
+		}
+	],
+	"homepage": "https://github.com/wrgallo/ads127l11",
+	"license": "MIT",
+	"frameworks": "*",
+	"platforms": "*"
+}
