@@ -1,6 +1,6 @@
 {
 	"name": "ads127l11",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"keywords": "adc, sigma-delta",
 	"description": "ADS127L11 analog to digital converter library",
 	"repository":
