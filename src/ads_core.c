@@ -5,7 +5,9 @@
 
 //#region Private Prototypes
 
-static void ads127l11_init_crc(ads127l11_t* ads);
+static void     ads127l11_init_crc(ads127l11_t* ads);
+static uint8_t  ads127l11_send_cmd(ads127l11_t* ads, uint8_t opcode[]);
+static void     ads127l11_restore_default(ads127l11_t* ads);
 
 //#endregion Private Prototypes
 
@@ -350,7 +352,7 @@ uint8_t  ads127l11_get_register_val(ads127l11_t* ads, const uint8_t address)
 //! \return None.
 //
 //*****************************************************************************
-void ads127l11_restore_default(ads127l11_t* ads)
+static void ads127l11_restore_default(ads127l11_t* ads)
 {
 	ads->reg[ADS127L11_DEVID_REG_ADDRESS]          =   ADS127L11_DEVID_REG_DEFAULT;
 //  ads->reg[ADS127L11_REVID_REG_ADDRESS]          =   ADS127L11_REVID_REG_DEFAULT;
@@ -469,7 +471,7 @@ void     ads127l11_reset_by_pattern(ads127l11_t* ads)
 //! \return ADC response byte (typically the STATUS byte).
 //
 //*****************************************************************************
-uint8_t  ads127l11_send_cmd(ads127l11_t* ads, uint8_t opcode[])
+static uint8_t  ads127l11_send_cmd(ads127l11_t* ads, uint8_t opcode[])
 {
     /* Assert if this function is used to send any of the following opcodes */
     //assert(ADS127L11_OPCODE_RREG != opcode[0]);      /* Use "readSingleRegister()"   */
@@ -593,5 +595,18 @@ bool ads127l11_setup( ads127l11_t* ads,
     return success;
 }
 
+void ads127l11_set_gain(ads127l11_t* ads, ads127l11_gain_reg_t gain)
+{
+    ads127l11_write_register( ads, ADS127L11_GAIN_LSB_REG_ADDRESS, gain.gain0);
+    ads127l11_write_register( ads, ADS127L11_GAIN_MID_REG_ADDRESS, gain.gain1);
+    ads127l11_write_register( ads, ADS127L11_GAIN_MSB_REG_ADDRESS, gain.gain2);
+}
+
+void ads127l11_set_offset(ads127l11_t* ads,  ads127l11_offset_reg_t off)
+{
+    ads127l11_write_register( ads, ADS127L11_OFFSET_LSB_REG_ADDRESS, off.offset_lsb);
+    ads127l11_write_register( ads, ADS127L11_OFFSET_MID_REG_ADDRESS, off.offset_mid);
+    ads127l11_write_register( ads, ADS127L11_OFFSET_MSB_REG_ADDRESS, off.offset_msb);
+}
 
 //#endregion Public
