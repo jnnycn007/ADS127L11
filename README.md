@@ -38,7 +38,7 @@ Save the `ads_hal_t` and basic configurations inside the `ads127l11_t` instance 
 typedef struct _ads127l11_t
 {
     ads_hal_t                     hal;                            //!< HAL Callback Functions
-	const ads127l11_config4_reg_t cfg4_reg;                       //!< CONFIG4 Register Value
+    const ads127l11_config4_reg_t cfg4_reg;                       //!< CONFIG4 Register Value
     const bool                    spi_3_wire;                     //!< Flag SPI 3 Wire is enabled
     uint8_t                       reg[ ADS127L11_NUM_REGISTERS ]; //!< ADS127L11 Register Map
 } ads127l11_t;
