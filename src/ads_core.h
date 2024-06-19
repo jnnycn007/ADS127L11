@@ -8,19 +8,6 @@ extern "C" {
 #include "./registers.h"
 #include "./crc.h"
 
-typedef enum _ads127l11_data_mode_t
-{
-    ADS127L11_RES_24_CRC_OFF_STATUS_OFF = 0b000, //!< Output frame size 3 bytes [24bit, no crc, no status]
-    ADS127L11_RES_24_CRC_OFF_STATUS_ON,          //!< Output frame size 4 bytes [24bit, no crc,    status]
-    ADS127L11_RES_24_CRC_ON_STATUS_OFF,          //!< Output frame size 4 bytes [24bit,    crc, no status]
-    ADS127L11_RES_24_CRC_ON_STATUS_ON,           //!< Output frame size 5 bytes [24bit,    crc,    status]
-
-    ADS127L11_RES_16_CRC_OFF_STATUS_OFF,         //!< Output frame size 2 bytes [16bit, no crc, no status]
-    ADS127L11_RES_16_CRC_OFF_STATUS_ON,          //!< Output frame size 3 bytes [16bit, no crc,    status]
-    ADS127L11_RES_16_CRC_ON_STATUS_OFF,          //!< Output frame size 3 bytes [16bit,    crc, no status]
-    ADS127L11_RES_16_CRC_ON_STATUS_ON,           //!< Output frame size 4 bytes [16bit,    crc,    status]
-} ads127l11_data_mode_t;
-
 /// @brief ADC sample data information
 typedef struct _ads127l11_ch_data_t
 {
@@ -29,29 +16,13 @@ typedef struct _ads127l11_ch_data_t
     int32_t     data;     //!< ADC sample as signed 32-bit word
 } ads127l11_ch_data_t;
 
-typedef union _ads127l11_mode_cfg_t
-{
-	struct
-	{
-		const uint8_t status_byte_en : 1; //!< Flag Status byte is enabled
-		const uint8_t crc_en         : 1; //!< Flag CRC is enabled
-		const uint8_t is_16_bit      : 1; //!< Flag 24 bit resolution is enabled
-		const uint8_t spi_3_wire     : 1; //!< Flag SPI 3 Wire is enabled
-		const uint8_t                : 4; // Unused
-	} flags;
-	struct
-	{
-		const uint8_t data_mode : 3; // Status, CRC and Resolution configuration
-		const uint8_t           : 5; // Unused
-	};
-} ads127l11_mode_cfg_t;
-
 /// @brief ADS127L11 instance
 typedef struct _ads127l11_t
 {
-    ads_hal_t            hal;                             //!< HAL Callback Functions
-    uint8_t              reg[ ADS127L11_NUM_REGISTERS ];  //!< ADS127L11 Register Map
-	ads127l11_mode_cfg_t cfg;                             //!< Constant configs
+    ads_hal_t                     hal;                            //!< HAL Callback Functions
+    const ads127l11_config4_reg_t cfg4_reg;                       //!< CONFIG4 Register Value
+    const bool                    spi_3_wire;                     //!< Flag SPI 3 Wire is enabled
+    uint8_t                       reg[ ADS127L11_NUM_REGISTERS ]; //!< ADS127L11 Register Map
 } ads127l11_t;
 
 /// @brief Setup the ADS127L11 before usage

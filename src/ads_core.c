@@ -61,85 +61,24 @@ static int32_t signExtend(const bool is_24_bit, const uint8_t dataBytes[])
 //*****************************************************************************
 static inline uint8_t buildSPIarray(ads127l11_t* ads, const uint8_t opcodeArray[], uint8_t byteArray[])
 {
-    #if 0
-    // May be faster, but not generic
-    switch( ads->data_mode )
-    {
-        default:
-        case ADS127L11_RES_24_CRC_OFF_STATUS_OFF:
-        {
-            byteArray[1] = opcodeArray[0];
-            byteArray[2] = opcodeArray[1];
-            return 3;
-        }
-        case ADS127L11_RES_24_CRC_OFF_STATUS_ON:
-        {
-            byteArray[2] = opcodeArray[0];
-            byteArray[3] = opcodeArray[1];
-            return 4;
-        }
-        case ADS127L11_RES_24_CRC_ON_STATUS_OFF:
-        {
-            byteArray[1] = opcodeArray[0];
-            byteArray[2] = opcodeArray[1];
-            byteArray[3] = getCRC(opcodeArray, 2, CRC_INITIAL_SEED);
-            return 3;
-        }
-        case ADS127L11_RES_24_CRC_ON_STATUS_ON:
-        {
-            byteArray[2] = opcodeArray[0];
-            byteArray[3] = opcodeArray[1];
-            byteArray[4] = getCRC(opcodeArray, 2, CRC_INITIAL_SEED);
-            return 4;
-        }
-
-        case ADS127L11_RES_16_CRC_OFF_STATUS_OFF:
-        {
-            byteArray[0] = opcodeArray[0];
-            byteArray[1] = opcodeArray[1];
-            return 2;
-        }
-        case ADS127L11_RES_16_CRC_OFF_STATUS_ON:
-        {
-            byteArray[1] = opcodeArray[0];
-            byteArray[2] = opcodeArray[1];
-            return 3;
-        }
-        case ADS127L11_RES_16_CRC_ON_STATUS_OFF:
-        {
-            byteArray[0] = opcodeArray[0];
-            byteArray[1] = opcodeArray[1];
-            byteArray[2] = getCRC(opcodeArray, 2, CRC_INITIAL_SEED);
-            return 2;
-        }
-        case ADS127L11_RES_16_CRC_ON_STATUS_ON:
-        {
-            byteArray[1] = opcodeArray[0];
-            byteArray[2] = opcodeArray[1];
-            byteArray[3] = getCRC(opcodeArray, 2, CRC_INITIAL_SEED);
-            return 3;
-        }
-    }
-    #else
 	//Fixed at 2. 8 bits for the command + address, and 8 bits of data (W) or arbitrary bits (R)
     const uint8_t numberOpcodes  = 2;
 	//Determine where the opcode/data bytes will be placed in the array
-    const uint8_t frontPadBytes  = (ads->cfg.flags.status_byte_en ? 1 : 0) + (ads->cfg.flags.is_16_bit ? 0 : 1);
+    const uint8_t frontPadBytes  = (ads->cfg4_reg.status ? 1 : 0) + (ads->cfg4_reg.data ? 0 : 1);
 	//Determine total number of bytes to clock
-    const uint8_t numberOfBytes  = numberOpcodes + frontPadBytes + (ads->cfg.flags.crc_en ? 1 : 0);
+    const uint8_t numberOfBytes  = numberOpcodes + frontPadBytes + (ads->cfg4_reg.spi_crc ? 1 : 0);
 
     //Place the command byte/data in the correct place in the array
     byteArray[frontPadBytes]     = opcodeArray[0];
     byteArray[frontPadBytes + 1] = opcodeArray[1];
 
     //Calculate/lookup CRC value
-	if( ads->cfg.flags.crc_en )
+	if( ads->cfg4_reg.spi_crc )
 	{
 		byteArray[frontPadBytes + 2] = getCRC(opcodeArray, numberOpcodes, CRC_INITIAL_SEED);
 	}
 
     return numberOfBytes;
-    #endif
 }
 
 //*****************************************************************************
@@ -159,7 +98,7 @@ static uint8_t enforce_selected_device_modes(ads127l11_t* ads, uint8_t data)
 
     ///////////////////////////////////////////////////////////////////////////
     // Enforce DATA Resolution setting
-	if( ads->cfg.flags.is_16_bit )
+	if( ads->cfg4_reg.data )
     {
 		// When writing to the CONFIG4 register, ensure DATA bit is ALWAYS set
     	data |= ADS127L11_CONFIG4_REG_DATA_16_BIT;
@@ -173,7 +112,7 @@ static uint8_t enforce_selected_device_modes(ads127l11_t* ads, uint8_t data)
 
     ///////////////////////////////////////////////////////////////////////////
     // Enforce SPI_CRC Setting
-	if( ads->cfg.flags.crc_en )
+	if( ads->cfg4_reg.spi_crc )
 	{
 		// When writing to the CONFIG4 register, ensure SPI_CRC bit is ALWAYS set
     	data |= ADS127L11_CONFIG4_REG_SPI_CRC_ENABLED;	
@@ -187,7 +126,7 @@ static uint8_t enforce_selected_device_modes(ads127l11_t* ads, uint8_t data)
 
     ///////////////////////////////////////////////////////////////////////////
     // Enforce STATUS Byte Output Setting
-	if( ads->cfg.flags.status_byte_en )
+	if( ads->cfg4_reg.status )
 	{
 		// When writing to the CONFIG4 register, ensure STATUS bit is ALWAYS set
     	data |= ADS127L11_CONFIG4_REG_STATUS_ENABLED;
@@ -302,18 +241,18 @@ int32_t  ads127l11_read_data(ads127l11_t* ads, ads127l11_ch_data_t* data)
     ads->hal.spi_exchange_array( ads->hal.param, dataTx, dataRx, numberOfBytes);
 
     // Parse ADC response...
-    uint8_t byteIndex = ads->cfg.flags.status_byte_en ? 1 : 0;
-    int32_t signedExtendedData = signExtend(ads->cfg.flags.is_16_bit ? 0 : 1,  &dataRx[byteIndex]);
+    uint8_t byteIndex = ads->cfg4_reg.status ? 1 : 0;
+    int32_t signedExtendedData = signExtend(ads->cfg4_reg.data ? 0 : 1,  &dataRx[byteIndex]);
     if ( data ) //Check if dataStruct is a null pointer
     {
-        if ( ads->cfg.flags.status_byte_en )
+        if ( ads->cfg4_reg.status )
         {
 			data->status = dataRx[0];
         }
 
-        if ( ads->cfg.flags.crc_en )
+        if ( ads->cfg4_reg.spi_crc )
         {
-            byteIndex = byteIndex + (ads->cfg.flags.is_16_bit ? 2 : 3);
+            byteIndex = byteIndex + (ads->cfg4_reg.data ? 2 : 3);
             data->crc = dataRx[byteIndex];
         }
 
@@ -404,7 +343,10 @@ void     ads127l11_reset_by_command(ads127l11_t* ads)
     ads->hal.spi_exchange_array( ads->hal.param, dataTx, dataRx, numberOfBytes);
 
     // tSRLRST delay
-    ads->hal.delay_ms( ads->hal.param,  1 );
+    if( ads->hal.delay_ms )
+    {
+        ads->hal.delay_ms( ads->hal.param,  1 );
+    }
 
     // Update register setting array to keep software in sync with device
     ads127l11_restore_default( ads );
@@ -424,7 +366,7 @@ void     ads127l11_reset_by_command(ads127l11_t* ads)
 //*****************************************************************************
 void     ads127l11_reset_by_pattern(ads127l11_t* ads)
 {
-    if( ads->cfg.flags.spi_3_wire )
+    if( ads->spi_3_wire )
     {
         //Reset by SPI Input Pattern Option 1 (3 wire or 4 wire SPI mode)
         /* Send 1024 ones followed by zero*/
@@ -451,7 +393,10 @@ void     ads127l11_reset_by_pattern(ads127l11_t* ads)
     }
 
     // tSRLRST delay
-    ads->hal.delay_ms( ads->hal.param,  1 );
+    if( ads->hal.delay_ms )
+    {
+        ads->hal.delay_ms( ads->hal.param,  1 );
+    }
 
     // Update register setting array to keep software in sync with device
     ads127l11_restore_default( ads );
@@ -497,7 +442,7 @@ static uint8_t  ads127l11_send_cmd(ads127l11_t* ads, uint8_t opcode[])
 	ads->hal.write_cs( ads->hal.param,  1 );
 
     // Return response byte
-    uint8_t adcResponse = dataRx[(ads->cfg.flags.status_byte_en ? 1 : 0)];
+    uint8_t adcResponse = dataRx[(ads->cfg4_reg.status ? 1 : 0)];
     return adcResponse;
 }
 
@@ -512,8 +457,14 @@ bool ads127l11_setup( ads127l11_t* ads,
     const ads127l11_config3_reg_t config3_reg,
     const ads127l11_config4_reg_t config4_reg )
 {
+    /* (OPTIONAL) Populate CRC lookup table */
+	if( ads->cfg4_reg.spi_crc )
+	{
+		ads127l11_init_crc(ads);
+	}
+
     // The CS_MODE is determined by the state of CS at power up or after reset.
-    if( ads->cfg.flags.spi_3_wire )
+    if( ads->spi_3_wire )
     {
         // 1b = 3-wire SPI operation (CS is tied low)
         ads->hal.write_cs( ads->hal.param,  0 );
@@ -525,21 +476,28 @@ bool ads127l11_setup( ads127l11_t* ads,
     }
 
 	/* (OPTIONAL) Provide additional delay time for power supply settling */
-	ads->hal.delay_ms( ads->hal.param,  50 );
-
-    /* (OPTIONAL) Populate CRC lookup table */
-	if( ads->cfg.flags.crc_en )
-	{
-		ads127l11_init_crc(ads);
-	}
+    if( ads->hal.delay_ms )
+    {
+        ads->hal.delay_ms( ads->hal.param,  50 );
+    }
 
 	/* (REQUIRED) Set nRESET pin high for ADC operation */
-	ads->hal.write_reset( ads->hal.param,  1 );
+    if( ads->hal.write_reset )
+    {
+        ads->hal.write_reset( ads->hal.param,  1 );
+    }
 
 	/* (REQUIRED) Set START pin high to begin conversions    */
-	ads->hal.write_start( ads->hal.param,  1 );
+    if( ads->hal.write_start )
+    {
+        // Starting conversion through START pin
+        ads->hal.write_start( ads->hal.param,  1 );
+    }
     
 	/* (OPTIONAL) Toggle nRESET pin to ensure default register settings. */
+    ads127l11_reset_by_pattern( ads );
+    #if 0
+    if( ads->hal.write_reset && ads->hal.delay_ms )
 	{
 		// Minimum /RESET pulse width (tSRLRST) equals 2,048 CLKIN periods (1 ms @ 2.048 MHz)
         ads->hal.write_reset( ads->hal.param,  0 );
@@ -548,17 +506,25 @@ bool ads127l11_setup( ads127l11_t* ads,
 
 		// Delay before communicating with the device again
 		ads->hal.delay_ms( ads->hal.param,  5 );
+
+        /* (REQUIRED) Initialize internal 'registerMap' array with device default settings */
+	    ads127l11_restore_default( ads );
 	}
+    else
+    {
+        ads127l11_reset_by_pattern( ads );
+    }
+    #endif
 
     // Set CS back to IDLE
-    if( ads->cfg.flags.spi_3_wire )
+    if( ads->spi_3_wire )
     {
         ads->hal.write_cs( ads->hal.param,  1 );
-        ads->hal.delay_ms( ads->hal.param,  1 );
+        if( ads->hal.delay_ms )
+        {
+            ads->hal.delay_ms( ads->hal.param,  1 );
+        }
     }
-
-	/* (REQUIRED) Initialize internal 'registerMap' array with device default settings */
-	ads127l11_restore_default( ads );
 
     // Fix possible brownout flags due to the power-on reset
     ads127l11_write_register(ads, 
@@ -576,13 +542,17 @@ bool ads127l11_setup( ads127l11_t* ads,
 	ads127l11_write_register(ads, ADS127L11_CONFIG2_REG_ADDRESS, config2_reg.u8);
 	ads127l11_write_register(ads, ADS127L11_CONFIG1_REG_ADDRESS, config1_reg.u8);
 
-    // Refresh local register map
+    if( !ads->hal.write_start )
+    {
+        // Starting conversion through SPI operation
+        ads127l11_write_register(ads, ADS127L11_CONTROL_REG_ADDRESS, ADS127L11_CONTROL_REG_START_1);
+    }
+
+    // (OPTIONAL) Refresh local register map
     #if 0
-    uint8_t reg_addr = 0;
-    while( reg_addr < ADS127L11_NUM_REGISTERS )
+    for(uint8_t reg_addr = 0; reg_addr < ADS127L11_NUM_REGISTERS; reg_addr++)
     {
         ads127l11_read_register(ads, reg_addr);
-        reg_addr++;
     }
     #endif
 

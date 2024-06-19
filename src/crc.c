@@ -70,6 +70,10 @@ static CRCWORD calculateCRC(const uint8_t dataBytes[], uint8_t numberBytes, CRCW
 void initCRC(void)
 {
 #ifdef CRC_LOOKUP
+    if(initialized)
+    {
+        return;
+    }
     initTable();
     initialized = true;
 #endif

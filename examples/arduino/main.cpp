@@ -5,13 +5,12 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#define PIN_ADC_CS        1
-#define PIN_ADC_RST      10
-#define PIN_ADC_SDI      11
-#define PIN_ADC_SCLK     12
-#define PIN_ADC_SDO      13
-#define PIN_ADC_RDY      14
-#define PIN_ADC_START    16
+#define PIN_ADC_RDY       4
+#define PIN_ADC_CS       21
+#define PIN_ADC_SCLK     36
+#define PIN_ADC_SDO      37 /* MCU_SDI */
+#define PIN_ADC_SDI      35 /* MCU_SDO */
+
 #define ADS127L11_SCLK_FREQ_HZ    ( 5000000  )  /* 3.2e6 Hz is enough for 100kSPS with 1 device */
 #define ADS127L11_SPI_BIT_ORDER   SPI_MSBFIRST  /* SPI Data Bit Order */
 #define ADS127L11_SPI_MODE        SPI_MODE1     /* ADS127L11 is compatible to SPI mode 1 (CPOL = 0 and CPHA = 1). */
@@ -67,25 +66,11 @@
 }
 
 
-void delay_ms(void* obj, uint32_t millis)
-{
-    delay(millis);
-}
-
 void write_cs(void* obj, const bool state)
 {
-    //digitalWrite( static_cast<MyClass*>(obj)->pin_adc_cs, (uint8_t)state ); // the 'obj' param may be helpful in cpp
+    // the 'obj' param may be helpful in cpp
+    //digitalWrite( static_cast<MyClass*>(obj)->pin_adc_cs, (uint8_t)state );
     digitalWrite( PIN_ADC_CS   , (uint8_t)state );
-}
-
-void write_start(void* obj, const bool state)
-{
-    digitalWrite( PIN_ADC_START, (uint8_t)state );
-}
-
-void write_reset(void* obj, const bool state)
-{
-    digitalWrite( PIN_ADC_RST  , (uint8_t)state );
 }
 
 void spi_exchange_array(void* obj, const uint8_t tx[], uint8_t rx[], const uint8_t len)
@@ -105,27 +90,19 @@ uint8_t spi_exchange_byte(void* obj, const uint8_t tx)
 // ADS127L11 instance
 ads127l11_t  ads =
 {
-    .hal = 
+    .hal =
     {
-        .param              = nullptr             ,
-        .delay_ms           = &delay_ms           ,
         .write_cs           = &write_cs           ,
-        .write_start        = &write_start        ,
-        .write_reset        = &write_reset        ,
         .spi_exchange_array = &spi_exchange_array ,
-        .spi_exchange_byte  = &spi_exchange_byte  
+        .spi_exchange_byte  = &spi_exchange_byte  ,
+        .write_start        = NULL,
+        .write_reset        = NULL,
+        .delay_ms           = NULL,
+        .param              = NULL
     },
-    .reg = {0},
-    .cfg =
-    {
-        .flags =
-        {
-            .status_byte_en = ( (ads127l11_config4_reg_t)ADS127L11_CONFIG4_REG ).status,
-            .crc_en         = ( (ads127l11_config4_reg_t)ADS127L11_CONFIG4_REG ).spi_crc,
-            .is_16_bit      = ( (ads127l11_config4_reg_t)ADS127L11_CONFIG4_REG ).data,
-            .spi_3_wire     = 0,
-        }
-    }
+    .cfg4_reg   = ( (ads127l11_config4_reg_t)ADS127L11_CONFIG4_REG ),
+    .spi_3_wire = 0 ,
+    .reg = {0}
 };
 
 void setup(void) 
@@ -138,9 +115,7 @@ void setup(void)
     
     // ADC127L11
     pinMode( PIN_ADC_CS      , OUTPUT       );
-    pinMode( PIN_ADC_RST     , OUTPUT       );
     pinMode( PIN_ADC_RDY     , INPUT_PULLUP );
-    pinMode( PIN_ADC_START   , OUTPUT       );
     
     // SPI Pins
     SPI.begin
@@ -176,11 +151,11 @@ void setup(void)
     }
     
     // Get samples
-    uint32_t time_last_print = millis();
-    uint32_t time_now        = 0;
-    uint32_t time_elapsed    = 0;
-    uint32_t ready_counter   = 0;    
     ads127l11_ch_data_t    ads_ch_data;
+    uint32_t time_elapsed    = 0;
+    uint32_t ready_counter   = 0;
+    uint32_t time_now        = 0;
+    uint32_t time_last_print = millis();
     while(1)
     {
         // ADS127L11 is ready

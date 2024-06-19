@@ -32,20 +32,16 @@ typedef uint8_t (*cb_spi_exchange_byte_t)(void* param, const uint8_t tx);
 
 typedef struct _ads_hal_t
 {
-    // Callback handlers extra param
-    void*                   param;                //!< Extra param for callback handlers
-
-    // System
-    cb_delay_ms_t           delay_ms;             //!< Wait milliseconds
-
-    // GPIO
+    // Required parameters
     cb_write_pin_t          write_cs;             //!< Write SPI CS Pin status
-    cb_write_pin_t          write_start;          //!< Write START Pin status
-    cb_write_pin_t          write_reset;          //!< Write RESET Pin status
-
-    // SPI
     cb_spi_exchange_array_t spi_exchange_array;   //!< Send and receive multiple bytes over SPI
     cb_spi_exchange_byte_t  spi_exchange_byte;    //!< Send and receive a single byte over SPI
+
+    // Optional parameters (can be NULL)
+    cb_write_pin_t          write_start;          //!< Write START Pin status (can be NULL if the pin is floating)
+    cb_write_pin_t          write_reset;          //!< Write RESET Pin status (can be NULL if the pin is floating)
+    cb_delay_ms_t           delay_ms;             //!< Wait milliseconds (can be NULL)
+    void*                   param;                //!< Extra param for callback handlers (can be NULL)
 } ads_hal_t;
 
 #ifdef __cplusplus

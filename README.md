@@ -7,7 +7,7 @@
 </p>
 <br>
 
-## :ledger: Overview
+## Overview
 
 **Description**<br>
 This library aims to be a port of the <a href="https://www.ti.com/tool/download/SBAC296" title="C Example Code">SBAC296 Example Code</a> provided by Texas Instrument.
@@ -18,31 +18,29 @@ Use a `ads_hal_t` constant to set your SPI and GPIO functions.
 ```C
 typedef struct _ads_hal_t
 {
-    // Callback handlers extra param
-    void*                   param;                //!< Extra param for callback handlers
-
-    // System
-    cb_delay_ms_t           delay_ms;             //!< Wait milliseconds
-
-    // GPIO
+    // Required parameters
     cb_write_pin_t          write_cs;             //!< Write SPI CS Pin status
-    cb_write_pin_t          write_start;          //!< Write START Pin status
-    cb_write_pin_t          write_reset;          //!< Write RESET Pin status
-
-    // SPI
     cb_spi_exchange_array_t spi_exchange_array;   //!< Send and receive multiple bytes over SPI
     cb_spi_exchange_byte_t  spi_exchange_byte;    //!< Send and receive a single byte over SPI
+
+    // Optional parameters (can be NULL)
+    cb_write_pin_t          write_start;          //!< Write START Pin status (can be NULL if the pin is floating)
+    cb_write_pin_t          write_reset;          //!< Write RESET Pin status (can be NULL if the pin is floating)
+    cb_delay_ms_t           delay_ms;             //!< Wait milliseconds (can be NULL)
+    void*                   param;                //!< Extra param for callback handlers (can be NULL)
 } ads_hal_t;
 ```
 
-Save the `ads_hal_t` and the desired data mode inside the `ads127l11_t` instance and that's it.
+Save the `ads_hal_t` and basic configurations inside the `ads127l11_t` instance and that's it.
+
 ```C
 /// @brief ADS127L11 instance
 typedef struct _ads127l11_t
 {
-    ads_hal_t            hal;                             //!< HAL Callback Functions
-    uint8_t              reg[ ADS127L11_NUM_REGISTERS ];  //!< ADS127L11 Register Map
-    ads127l11_mode_cfg_t cfg;                             //!< Constant configs
+    ads_hal_t                     hal;                            //!< HAL Callback Functions
+	const ads127l11_config4_reg_t cfg4_reg;                       //!< CONFIG4 Register Value
+    const bool                    spi_3_wire;                     //!< Flag SPI 3 Wire is enabled
+    uint8_t                       reg[ ADS127L11_NUM_REGISTERS ]; //!< ADS127L11 Register Map
 } ads127l11_t;
 ```
 
