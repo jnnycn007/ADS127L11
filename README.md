@@ -3,14 +3,14 @@
 <p align="center">
 <a href="https://www.ti.com/product/ADS127L11" title="Product Details">Product Details</a> |
 <a href="https://www.ti.com/lit/ds/symlink/ads127l11.pdf" title="Datasheet">Datasheet</a> |
-<a href="https://www.ti.com/tool/download/SBAC296" title="C Example Code">SBAC296 Example Code</a>
+<a href="https://github.com/TexasInstruments/precision-adc-examples/tree/main/devices/ads127l11" title="C Example Code">ADS127L11 Example C Code</a>
 </p>
 <br>
 
 ## Overview
 
 **Description**<br>
-This library aims to be a port of the <a href="https://www.ti.com/tool/download/SBAC296" title="C Example Code">SBAC296 Example Code</a> provided by Texas Instrument.
+This library aims to be a port of the <a href="https://github.com/TexasInstruments/precision-adc-examples/tree/main/devices/ads127l11" title="C Example Code">ADS127L11 Example C Code</a> provided by Texas Instrument.
 
 **Hardware Abstraction Layer**<br>
 Use a `ads_hal_t` constant to set your SPI and GPIO functions.
